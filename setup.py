@@ -18,9 +18,15 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with pyo.  If not, see <http://www.gnu.org/licenses/>.
 """
-from distutils.sysconfig import get_python_lib
-from distutils.core import setup, Extension
-import os, sys, py_compile, subprocess
+from setuptools import setup, Extension
+import os
+import subprocess
+import sys
+
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = OSError
 
 if sys.version_info[0] < 3:
     def tobytes(strng, encoding=None):
@@ -30,6 +36,7 @@ else:
     def tobytes(strng, encoding="utf-8"):
         "Convert unicode string to bytes."
         return bytes(strng, encoding=encoding)
+
 
 def get_jack_api():
     try:
@@ -48,6 +55,7 @@ def get_jack_api():
     else:
         return "JACK_NEW_API"
 
+
 pyo_version = "0.8.8"
 build_with_jack_support = False
 compile_externals = False
@@ -58,26 +66,26 @@ main_modules = ['pyo']
 extra_macros_per_extension = [[]]
 
 if '--use-double' in sys.argv:
-    sys.argv.remove('--use-double') 
-    if not '--only-double' in sys.argv: 
+    sys.argv.remove('--use-double')
+    if '--only-double' not in sys.argv:
         extension_names.append('_pyo64')
         main_modules.append('pyo64')
-        extra_macros_per_extension.append([('USE_DOUBLE',None)])
+        extra_macros_per_extension.append([('USE_DOUBLE', None)])
 
 if '--only-double' in sys.argv:
-    sys.argv.remove('--only-double') 
+    sys.argv.remove('--only-double')
     extension_names = ['_pyo64']
     main_modules = ['pyo64']
-    extra_macros_per_extension = [[('USE_DOUBLE',None)]]
+    extra_macros_per_extension = [[('USE_DOUBLE', None)]]
 
-if '--no-messages' in sys.argv:    
-    sys.argv.remove('--no-messages') 
-    macros.append(('NO_MESSAGES',None))
+if '--no-messages' in sys.argv:
+    sys.argv.remove('--no-messages')
+    macros.append(('NO_MESSAGES', None))
 
 if '--compile-externals' in sys.argv:
     compile_externals = True
-    sys.argv.remove('--compile-externals') 
-    macros.append(('COMPILE_EXTERNALS',None))
+    sys.argv.remove('--compile-externals')
+    macros.append(('COMPILE_EXTERNALS', None))
 
 if '--debug' in sys.argv:
     sys.argv.remove('--debug')
@@ -98,7 +106,7 @@ obj_files = []
 # Special flag to build without portaudio, portmidi and liblo deps.
 if '--minimal' in sys.argv:
     minimal_build = True
-    sys.argv.remove('--minimal') 
+    sys.argv.remove('--minimal')
     libraries = []
 else:
     minimal_build = False
@@ -121,15 +129,15 @@ else:
         libraries += ["lo"]
 
 # Optional Audio / Midi drivers
-if '--use-jack' in sys.argv: 
-    sys.argv.remove('--use-jack') 
+if '--use-jack' in sys.argv:
+    sys.argv.remove('--use-jack')
     build_with_jack_support = True
     macros.append(('USE_JACK', None))
     macros.append((get_jack_api(), None))
     ad_files.append("ad_jack.c")
 
-if '--use-coreaudio' in sys.argv: 
-    sys.argv.remove('--use-coreaudio') 
+if '--use-coreaudio' in sys.argv:
+    sys.argv.remove('--use-coreaudio')
     macros.append(('USE_COREAUDIO', None))
     ad_files.append("ad_coreaudio.c")
 
@@ -137,22 +145,27 @@ if sys.platform == "darwin":
     macros.append(('_OSX_', None))
 
 path = 'src/engine'
-files = ['pyomodule.c', 'streammodule.c', 'servermodule.c', 'pvstreammodule.c', 
-         'dummymodule.c', 'mixmodule.c', 'inputfadermodule.c', 'interpolation.c', 
+files = ['pyomodule.c', 'streammodule.c', 'servermodule.c', 'pvstreammodule.c',
+         'dummymodule.c', 'mixmodule.c', 'inputfadermodule.c',
+         'interpolation.c',
          'fft.c', "wind.c"] + ad_files
 source_files = [os.path.join(path, f) for f in files]
 
 path = 'src/objects'
-files = ['filtremodule.c', 'arithmeticmodule.c', 'oscilmodule.c', 
-         'randommodule.c', 'analysismodule.c', 'sfplayermodule.c', 
-         'oscbankmodule.c', 'lfomodule.c', 'exprmodule.c', 'utilsmodule.c', 
-         'granulatormodule.c', 'matrixmodule.c', 'noisemodule.c', 'distomodule.c', 
-         'tablemodule.c', 'wgverbmodule.c', 'inputmodule.c', 'fadermodule.c', 
-         'midimodule.c', 'delaymodule.c','recordmodule.c', 'metromodule.c', 
-         'trigmodule.c', 'patternmodule.c', 'bandsplitmodule.c', 'hilbertmodule.c', 
-         'panmodule.c', 'selectmodule.c', 'compressmodule.c',  'freeverbmodule.c', 
+files = ['filtremodule.c', 'arithmeticmodule.c', 'oscilmodule.c',
+         'randommodule.c', 'analysismodule.c', 'sfplayermodule.c',
+         'oscbankmodule.c', 'lfomodule.c', 'exprmodule.c', 'utilsmodule.c',
+         'granulatormodule.c', 'matrixmodule.c', 'noisemodule.c',
+         'distomodule.c',
+         'tablemodule.c', 'wgverbmodule.c', 'inputmodule.c', 'fadermodule.c',
+         'midimodule.c', 'delaymodule.c', 'recordmodule.c', 'metromodule.c',
+         'trigmodule.c', 'patternmodule.c', 'bandsplitmodule.c',
+         'hilbertmodule.c',
+         'panmodule.c', 'selectmodule.c', 'compressmodule.c',
+         'freeverbmodule.c',
          'phasevocmodule.c', 'fftmodule.c', 'convolvemodule.c', 'sigmodule.c',
-         'matrixprocessmodule.c', 'harmonizermodule.c', 'chorusmodule.c'] + obj_files
+         'matrixprocessmodule.c', 'harmonizermodule.c', 'chorusmodule.c'
+         ] + obj_files
 
 if compile_externals:
     source_files = source_files + \
@@ -161,12 +174,14 @@ if compile_externals:
 else:
     source_files = source_files + [os.path.join(path, f) for f in files]
 
-# Platform-specific build settings for the pyo extension(s).  
+# Platform-specific build settings for the pyo extension(s).
 if sys.platform == "win32":
     include_dirs = ['C:\portaudio\include', 'C:\portmidi\pm_common', 'include',
                     'C:\Program Files (x86)\Mega-Nerd\libsndfile\include',
-                    'C:\liblo-0.28', 'C:\pthreads\include', 'C:\portmidi\porttime']
-    library_dirs = ['C:\portaudio', 'C:\portmidi', 'C:\liblo-0.28\src\.libs', 'C:\pthreads\lib', 
+                    'C:\liblo-0.28', 'C:\pthreads\include',
+                    'C:\portmidi\porttime']
+    library_dirs = ['C:\portaudio', 'C:\portmidi', 'C:\liblo-0.28\src\.libs',
+                    'C:\pthreads\lib',
                     'C:/Program Files (x86)/Mega-Nerd/libsndfile/bin']
     libraries += ['libsndfile-1', 'pthreadGC2']
     if 'portmidi' in libraries:
@@ -181,14 +196,17 @@ else:
         libraries.append('jack')
 
 libraries += ['m']
-extra_compile_args = ['-Wno-strict-prototypes', '-Wno-strict-aliasing'] + oflag + gflag
+extra_compile_args = [
+    '-Wno-strict-prototypes', '-Wno-strict-aliasing'] + oflag + gflag
 
 extensions = []
 for extension_name, extra_macros in zip(extension_names, extra_macros_per_extension):
-    extensions.append(Extension(extension_name, source_files, libraries=libraries, 
-                                library_dirs=library_dirs, include_dirs=include_dirs, 
-                                extra_compile_args=extra_compile_args,
-                                define_macros=macros + extra_macros))
+    extensions.append(
+        Extension(extension_name, source_files, libraries=libraries,
+                  library_dirs=library_dirs,
+                  include_dirs=include_dirs,
+                  extra_compile_args=extra_compile_args,
+                  define_macros=macros + extra_macros))
 
 if compile_externals:
     include_dirs.append('externals')
@@ -196,19 +214,18 @@ if compile_externals:
 
 soundfiles = [f for f in os.listdir('pyolib/snds') if f[-3:] in ['aif', 'wav']]
 ldesc = "Python module written in C to help digital signal processing script creation."
-setup(  name = "pyo",
-        author = "Olivier Belanger",
-        author_email = "belangeo@gmail.com",
-        version = pyo_version,
-        description = "Python dsp module.",
-        long_description = ldesc,
-        url = "https://github.com/belangeo/pyo",
-        license = "LGPLv3+",
-        packages = ['pyolib', 'pyolib.snds'],
-        py_modules = main_modules,
-        package_data = {'pyolib.snds': soundfiles},
-        ext_modules = extensions)
+setup(name="pyo",
+      author="Olivier Belanger",
+      author_email="belangeo@gmail.com",
+      version=pyo_version,
+      description="Python dsp module.",
+      long_description=ldesc,
+      url="https://github.com/belangeo/pyo",
+      license="LGPLv3+",
+      packages=['pyolib', 'pyolib.snds'],
+      py_modules=main_modules,
+      package_data={'pyolib.snds': soundfiles},
+      ext_modules=extensions)
 
 if compile_externals:
     os.system('rm pyolib/external.py')
-
